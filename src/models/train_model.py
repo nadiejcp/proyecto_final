@@ -33,7 +33,7 @@ class Trainer:
         4. Entrena el modelo haciendo fit(X, y).
         5. Guarda el modelo entrenado en `model_save_path` (ej. 'models/best_model.pkl') usando joblib.dump().
         """
-        if os.path.exists(self.config['models'][model_name]['save_path']):
+        if os.path.exists(self.config['models'][model_name]['save_path']) and not self.config['data']['reload']:
             return load_model(self.config['models'][model_name]['save_path'])
         X_train, y_train = load_dataset(self.config["data"]["interim_data_path"] + "/train_set.csv", self.config["features"]["target"])
         model = self.model_factory.create(model_name)
