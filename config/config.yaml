@@ -1,0 +1,46 @@
+seed: 42
+
+data:
+  path_to_raw: data/raw
+  path_to_processed: data/processed
+  path_to_download: https://github.com/ageron/data/raw/main/housing.tgz
+  interim_data_path: data/interim
+  split:
+    test_size: 0.2
+    val_size: 0.1
+  lon_point: -122.51098595945538
+  lat_point: 37.758591813358514
+  reload: True
+  path: data
+
+features:
+  one_hot_encode:
+    - ocean_proximity
+  target: median_house_value
+
+best_model:
+  save_path: models/best_model.joblib
+
+models:
+  linear_regression:
+    type: linear_regression
+    save_path: models/linear_regression.joblib
+  random_forest:
+    type: random_forest
+    n_estimators: 200
+    save_path: models/random_forest.joblib
+  xgboost:
+    type: xgboost
+    n_estimators: 200
+    save_path: models/xgboost.joblib
+  decision_tree:
+    type: decision_tree
+    save_path: models/decision_tree.joblib
+  sgd_regressor:
+    type: sgd_regressor
+    save_path: models/sgd_regressor.joblib
+  gradient_boosting:
+    type: gradient_boosting
+    save_path: models/gradient_boosting.joblib
+  
+
