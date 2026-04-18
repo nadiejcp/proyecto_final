@@ -410,7 +410,6 @@
         throw new Error(json.detail || json.error || 'Error desconocido');
       }
     } catch (err) {
-      console.log('err', JSON.stringify(err))
       panel.className  = 'result-panel error';
       label.textContent = '⚠ Error';
       value.textContent = err.message;
