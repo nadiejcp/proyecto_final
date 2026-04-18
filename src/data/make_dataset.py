@@ -6,13 +6,14 @@ import os
 import urllib.request
 import tarfile
 from pathlib import Path
-from utils.functions import haversine
+from utils.functions import save_file
 import pandas as pd
 
 class DataLoader:
 
     def __init__(self, config: dict):
         self.config = config
+        self.mappings = {}
 
     def fetch_data(self):
         """
@@ -58,8 +59,12 @@ class DataLoader:
             df['rooms_per_person'] = df['total_rooms'] / df['population']
             df['bedrooms_per_household'] = df['total_bedrooms'] / df['households']
             for col in self.config["features"]["one_hot_encode"]:
-                df[col] = pd.factorize(df[col])[0] + 1
-
+                codes, uniques = pd.factorize(df[col])
+                df[col] = codes + 1
+                self.mappings[col] = {
+                    val: i + 1 for i, val in enumerate(uniques)
+                }
+            save_file(self.config['data']['mappings'], self.mappings)
             cols_to_drop = self.config["features"].get("to_drop", None)
             if cols_to_drop:
                 df = df.drop(columns=cols_to_drop)

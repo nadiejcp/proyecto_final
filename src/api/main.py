@@ -10,6 +10,8 @@ import joblib
 import pandas as pd
 import math
 import os
+from config.load_config import load_config
+from utils.functions import load_file
 
 # ---------------------------------------------------------------------------
 # Configuración de la app
@@ -25,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # ---------------------------------------------------------------------------
 # Esquema de entrada con validación
 # ---------------------------------------------------------------------------
-VALID_OCEAN_PROXIMITY = {"<1H OCEAN", "NEAR OCEAN", "INLAND"}
+VALID_OCEAN_PROXIMITY = {"<1H OCEAN", "NEAR OCEAN", "INLAND", "ISLAND", "NEAR BAY"}
 
 class HousingFeatures(BaseModel):
     longitude:          float
@@ -36,51 +38,29 @@ class HousingFeatures(BaseModel):
     population:         float
     households:         float
     median_income:      float
-    ocean_proximity:    str   # "<1H OCEAN" | "NEAR OCEAN" | "INLAND"
-
-    # --- Validadores de campos numéricos ---
-    @field_validator(
-        "longitude", "latitude", "housing_median_age",
-        "total_rooms", "total_bedrooms", "population",
-        "households", "median_income",
-        mode="before",
-    )
-    @classmethod
-    def must_be_finite_number(cls, v, info):
-        try:
-            num = float(v)
-        except (TypeError, ValueError):
-            raise ValueError(f"'{info.field_name}' debe ser un número.")
-        if math.isnan(num) or math.isinf(num):
-            raise ValueError(f"'{info.field_name}' no puede ser NaN ni infinito.")
-        return num
-
-    # --- Validador de ocean_proximity ---
-    @field_validator("ocean_proximity", mode="before")
-    @classmethod
-    def must_be_valid_proximity(cls, v):
-        if str(v).strip().upper() not in {x.upper() for x in VALID_OCEAN_PROXIMITY}:
-            raise ValueError(
-                f"ocean_proximity inválido. Opciones: {sorted(VALID_OCEAN_PROXIMITY)}"
-            )
-        return str(v).strip().upper()
+    ocean_proximity:    str
 
 # ---------------------------------------------------------------------------
 # Modelo global
 # ---------------------------------------------------------------------------
 model = None
+mappings = {}
 
 @app.on_event("startup")
 def load_model():
     """Carga el modelo al iniciar el servidor."""
     global model
-    model_path = os.path.join(BASE_DIR, "..", "..", "models", "best_model.pkl")
+    config = load_config("config/config.yaml")
+    model_path = config['best_model']['save_path']
+    global mappings
+    mappings = load_file(config['data']['mappings'])
+    mappings = mappings.get('ocean_proximity')
     try:
         model = joblib.load(model_path)
         print(f"[OK] Modelo cargado desde: {model_path}")
     except Exception as e:
         print(f"[WARN] No se pudo cargar el modelo: {e}")
-        print("      Ya lo entrenaste y guardaste en models/best_model.pkl?")
+        print("      Ya lo entrenaste y guardaste en models/best_model.joblib?")
 
 # ---------------------------------------------------------------------------
 # Rutas
@@ -92,7 +72,6 @@ def home():
     with open(html_path, encoding="utf-8") as f:
         content = f.read()
     return HTMLResponse(content=content)
-
 
 @app.post("/predict")
 def predict_price(features: HousingFeatures):
@@ -110,8 +89,25 @@ def predict_price(features: HousingFeatures):
             detail="El modelo no se ha cargado. Entrena y guarda el modelo primero.",
         )
 
-    # Construir DataFrame de entrada
-    data = pd.DataFrame([{
+    fields = ["longitude", "latitude", "housing_median_age",
+        "total_rooms", "total_bedrooms", "population",
+        "households", "median_income"]
+    
+    for f in fields:
+        try:
+            v = getattr(features, f, None)
+            num = float(v)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f"{f} debe ser un numero: {e}")
+        if math.isnan(num) or math.isinf(num):
+            raise HTTPException(status_code=400, detail=f"'{f}' no puede ser NaN ni infinito.")
+    global mappings
+    category = mappings.get(str(features.ocean_proximity).strip().upper())
+    if not category:
+        raise HTTPException(
+            status_code=400, detail=f"Proximidad al Oceano inválido. Opciones: {sorted(mappings)}"
+        )
+    df = pd.DataFrame([{
         "longitude":          features.longitude,
         "latitude":           features.latitude,
         "housing_median_age": features.housing_median_age,
@@ -120,11 +116,18 @@ def predict_price(features: HousingFeatures):
         "population":         features.population,
         "households":         features.households,
         "median_income":      features.median_income,
-        "ocean_proximity":    features.ocean_proximity,
+        "ocean_proximity":    category,
     }])
 
+    df['rooms_per_household'] = df['total_rooms'] / df['households']
+    df['bedrooms_per_room'] = df['total_bedrooms'] / df['total_rooms']
+    df['persons_per_house'] = df['population'] / df['households']
+    df['income_per_person'] = df['median_income'] / df['population']
+    df['rooms_per_person'] = df['total_rooms'] / df['population']
+    df['bedrooms_per_household'] = df['total_bedrooms'] / df['households']
+
     try:
-        prediction = float(model.predict(data)[0])
+        prediction = float(model.predict(df)[0])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al predecir: {e}")
 

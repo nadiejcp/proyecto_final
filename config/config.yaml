@@ -12,6 +12,7 @@ data:
   lat_point: 37.758591813358514
   reload: True
   path: data
+  mappings: data/mappings
 
 features:
   one_hot_encode:

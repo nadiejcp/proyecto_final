@@ -246,7 +246,7 @@
   <div class="card-header">
     <div class="header-badge">Machine Learning · California Housing</div>
     <h1>Predictor de Precio de Vivienda</h1>
-    <p>Ingresa las características de la propiedad para obtener una estimación del precio mediano.</p>
+    <p>Ingresa las características de la propiedad para obtener una estimación del precio.</p>
   </div>
 
   <!-- Form -->
@@ -410,6 +410,7 @@
         throw new Error(json.detail || json.error || 'Error desconocido');
       }
     } catch (err) {
+      console.log('err', JSON.stringify(err))
       panel.className  = 'result-panel error';
       label.textContent = '⚠ Error';
       value.textContent = err.message;

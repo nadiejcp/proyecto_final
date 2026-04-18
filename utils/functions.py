@@ -4,6 +4,14 @@ import joblib
 import json
 import pandas as pd
 
+def save_file(path: str, mappings: dict):
+  with open(path, "w") as f:
+    json.dump(mappings, f)
+
+def load_file(path: str):
+  with open(path, "r") as f:
+    return json.load(f)
+
 def load_model(path: str):
   path = Path(path)
   return joblib.load(path)
