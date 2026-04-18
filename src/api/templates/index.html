@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Predictor de Precios de Vivienda · California</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #23273a;
+      --border: #2e3249;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --success: #34d399;
+      --error: #f87171;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 60px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 780px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,.55);
+    }
+
+    /* Header */
+    .card-header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4c1d95 100%);
+      padding: 36px 40px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 80% 50%, rgba(108,99,255,.25) 0%, transparent 70%);
+    }
+    .header-badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 8px;
+      position: relative; z-index: 1;
+    }
+    .card-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.2;
+      position: relative; z-index: 1;
+    }
+    .card-header p {
+      margin-top: 8px;
+      color: #c4b5fd;
+      font-size: .875rem;
+      line-height: 1.6;
+      position: relative; z-index: 1;
+    }
+
+    /* Form body */
+    .card-body { padding: 36px 40px; }
+
+    .section-label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: .3px;
+    }
+    .field input,
+    .field select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: .875rem;
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .field input::placeholder { color: #4a5568; }
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.2);
+    }
+    .field input.invalid { border-color: var(--error); box-shadow: 0 0 0 3px rgba(248,113,113,.15); }
+
+    /* Select wrapper for custom arrow */
+    .select-wrap { position: relative; }
+    .select-wrap select { padding-right: 36px; cursor: pointer; }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: .9rem;
+    }
+
+    /* Error hints */
+    .field-error {
+      font-size: .72rem;
+      color: var(--error);
+      min-height: 16px;
+      margin-top: 2px;
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: .4px;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 4px 20px rgba(108,99,255,.4);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-submit:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(108,99,255,.5); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result panel */
+    .result-panel {
+      margin-top: 28px;
+      border-radius: 10px;
+      padding: 20px 24px;
+      display: none;
+      animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .result-panel.success {
+      background: rgba(52,211,153,.08);
+      border: 1px solid rgba(52,211,153,.3);
+    }
+    .result-panel.error {
+      background: rgba(248,113,113,.08);
+      border: 1px solid rgba(248,113,113,.3);
+    }
+
+    .result-label {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .result-panel.success .result-label { color: var(--success); }
+    .result-panel.error   .result-label { color: var(--error); }
+
+    .result-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .result-panel.success .result-value { color: #a7f3d0; }
+    .result-panel.error   .result-value { font-size: 1rem; color: #fca5a5; }
+
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      .card-header, .card-body { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Header -->
+  <div class="card-header">
+    <div class="header-badge">Machine Learning · California Housing</div>
+    <h1>Predictor de Precio de Vivienda</h1>
+    <p>Ingresa las características de la propiedad para obtener una estimación del precio mediano.</p>
+  </div>
+
+  <!-- Form -->
+  <div class="card-body">
+    <form id="predictForm" novalidate>
+
+      <!-- Sección Geografía -->
+      <div class="section-label">Ubicación Geográfica</div>
+      <div class="grid">
+        <div class="field">
+          <label for="longitude">Longitud</label>
+          <input type="number" id="longitude" name="longitude" step="any" placeholder="-118.25" required/>
+          <div class="field-error" id="err-longitude"></div>
+        </div>
+        <div class="field">
+          <label for="latitude">Latitud</label>
+          <input type="number" id="latitude" name="latitude" step="any" placeholder="34.05" required/>
+          <div class="field-error" id="err-latitude"></div>
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label for="ocean_proximity">Proximidad al Océano</label>
+          <div class="select-wrap">
+            <select id="ocean_proximity" name="ocean_proximity" required>
+              <option value="" disabled selected>Selecciona una opción…</option>
+              <option value="<1H OCEAN">&lt;1H Ocean</option>
+              <option value="NEAR OCEAN">Near Ocean</option>
+              <option value="NEAR BAY">Near Bay</option>
+              <option value="INLAND">Inland</option>
+              <option value="ISLAND">Island</option>
+            </select>
+          </div>
+          <div class="field-error" id="err-ocean_proximity"></div>
+        </div>
+      </div>
+
+      <!-- Sección Vivienda -->
+      <div class="section-label">Características de la Vivienda</div>
+      <div class="grid">
+        <div class="field">
+          <label for="housing_median_age">Edad Mediana de Vivienda</label>
+          <input type="number" id="housing_median_age" name="housing_median_age" step="any" placeholder="28" required/>
+          <div class="field-error" id="err-housing_median_age"></div>
+        </div>
+        <div class="field">
+          <label for="median_income">Ingreso Mediano (×$10k)</label>
+          <input type="number" id="median_income" name="median_income" step="any" placeholder="3.5" required/>
+          <div class="field-error" id="err-median_income"></div>
+        </div>
+        <div class="field">
+          <label for="total_rooms">Total de Habitaciones</label>
+          <input type="number" id="total_rooms" name="total_rooms" step="any" placeholder="1200" required/>
+          <div class="field-error" id="err-total_rooms"></div>
+        </div>
+        <div class="field">
+          <label for="total_bedrooms">Total de Dormitorios</label>
+          <input type="number" id="total_bedrooms" name="total_bedrooms" step="any" placeholder="300" required/>
+          <div class="field-error" id="err-total_bedrooms"></div>
+        </div>
+        <div class="field">
+          <label for="population">Población del Bloque</label>
+          <input type="number" id="population" name="population" step="any" placeholder="850" required/>
+          <div class="field-error" id="err-population"></div>
+        </div>
+        <div class="field">
+          <label for="households">Número de Hogares</label>
+          <input type="number" id="households" name="households" step="any" placeholder="280" required/>
+          <div class="field-error" id="err-households"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Predecir Precio</span>
+      </button>
+
+      <!-- Result -->
+      <div class="result-panel" id="resultPanel">
+        <div class="result-label" id="resultLabel"></div>
+        <div class="result-value" id="resultValue"></div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  const numericFields = [
+    'longitude','latitude','housing_median_age',
+    'total_rooms','total_bedrooms','population',
+    'households','median_income'
+  ];
+
+  function clearErrors() {
+    numericFields.forEach(f => {
+      document.getElementById(`err-${f}`).textContent = '';
+      document.getElementById(f).classList.remove('invalid');
+    });
+    document.getElementById('err-ocean_proximity').textContent = '';
+  }
+
+  function validateForm(data) {
+    let valid = true;
+    numericFields.forEach(f => {
+      const val = data[f];
+      const el  = document.getElementById(f);
+      const err = document.getElementById(`err-${f}`);
+      if (val === '' || val === null || isNaN(Number(val))) {
+        err.textContent = 'Ingresa un número válido.';
+        el.classList.add('invalid');
+        valid = false;
+      }
+    });
+    if (!data.ocean_proximity) {
+      document.getElementById('err-ocean_proximity').textContent = 'Selecciona una opción.';
+      valid = false;
+    }
+    return valid;
+  }
+
+  document.getElementById('predictForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+
+    const raw = {};
+    numericFields.forEach(f => raw[f] = document.getElementById(f).value.trim());
+    raw.ocean_proximity = document.getElementById('ocean_proximity').value;
+
+    if (!validateForm(raw)) return;
+
+    const payload = {};
+    numericFields.forEach(f => payload[f] = parseFloat(raw[f]));
+    payload.ocean_proximity = raw.ocean_proximity;
+
+    const btn     = document.getElementById('submitBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    const panel   = document.getElementById('resultPanel');
+    const label   = document.getElementById('resultLabel');
+    const value   = document.getElementById('resultValue');
+
+    btn.disabled     = true;
+    spinner.style.display = 'block';
+    btnText.textContent   = 'Calculando…';
+    panel.style.display   = 'none';
+
+    try {
+      const res  = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+
+      if (res.ok && json.predicted_price !== undefined) {
+        panel.className  = 'result-panel success';
+        label.textContent = '✦ Precio estimado';
+        value.textContent = new Intl.NumberFormat('en-US', {
+          style: 'currency', currency: 'USD', maximumFractionDigits: 0
+        }).format(json.predicted_price);
+      } else {
+        throw new Error(json.detail || json.error || 'Error desconocido');
+      }
+    } catch (err) {
+      panel.className  = 'result-panel error';
+      label.textContent = '⚠ Error';
+      value.textContent = err.message;
+    } finally {
+      btn.disabled          = false;
+      spinner.style.display = 'none';
+      btnText.textContent   = 'Predecir Precio';
+      panel.style.display   = 'block';
+    }
+  });
+</script>
+</body>
+</html>
